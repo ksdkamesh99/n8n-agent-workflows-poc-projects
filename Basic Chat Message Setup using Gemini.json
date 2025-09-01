@@ -1,0 +1,115 @@
+{
+  "name": "Basic Chat Message Setup using Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "e50d8c2a-b93f-433a-a8d6-996349854923",
+      "name": "When chat message received",
+      "webhookId": "e0c46443-9c6b-4ed0-b178-48b0f23f60ca"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=User Message: {{ $json.chatInput }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1a3049bf-2ccb-4440-8302-96081971defc",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "HCkaAylBbpOKestz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.content.parts[0].text }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        560,
+        0
+      ],
+      "id": "105ee5b9-f704-4685-9593-bf969639ee9c",
+      "name": "Respond to Chat",
+      "notesInFlow": false
+    }
+  ],
+  "pinData": {
+    "When chat message received": [
+      {
+        "json": {
+          "sessionId": "5e063693140b452b92dfe0df4d8dd962",
+          "action": "sendMessage",
+          "chatInput": "hi"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fd8b010e-9490-4d8c-88e4-0d9b3715564b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4875c36f49e7c115ad2aad98aa70412fd00236db139035f8a7c7c48aa09ec332"
+  },
+  "id": "HqkyPrlioNRJ7yrB",
+  "tags": []
+}
