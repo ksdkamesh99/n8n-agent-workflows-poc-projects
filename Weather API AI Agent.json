@@ -73,7 +73,7 @@
           "parameters": [
             {
               "name": "key",
-              "value": "AIzaSyCTp9rmb8d0zkWAzMS0k-cACkRo5Zt2xRk"
+              "value": "api_key"
             },
             {
               "name": "location.latitude",
