@@ -1,0 +1,208 @@
+{
+  "name": "Chat Agent Read and Analyse the data from Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ddb5ff49-138f-4683-bbc7-0dcfb56cc981",
+      "name": "When chat message received",
+      "webhookId": "66c7adbf-939e-4952-887a-503d7e0e6939"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful assistant which has access to google sheets data. You will be able to analytics based on users input and return analysis"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        368,
+        0
+      ],
+      "id": "bc0a5a37-ece7-4e11-92e0-5985a3ca2f50",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        208
+      ],
+      "id": "c0a791ca-4552-4bc6-b6ad-6f8c92fca1b6",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "HCkaAylBbpOKestz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        720,
+        0
+      ],
+      "id": "25ff83c0-866c-4aa4-98cc-07af1fb243ff",
+      "name": "Respond to Chat"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        208
+      ],
+      "id": "17bf806f-0fbe-4b37-b397-bcdfc7f5cf41",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        608,
+        208
+      ],
+      "id": "a24fd5ea-efca-47f2-858e-9ef42307c071",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Google Sheet Get Rows Tool",
+        "documentId": {
+          "__rl": true,
+          "value": "184jJXtqMUHzm_hyixNPjm-w_YRY_-YyVj4AbGWgxI8I",
+          "mode": "list",
+          "cachedResultName": "DHE_SHEET",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/184jJXtqMUHzm_hyixNPjm-w_YRY_-YyVj4AbGWgxI8I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 837899005,
+          "mode": "list",
+          "cachedResultName": "DHE-TOTAL",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/184jJXtqMUHzm_hyixNPjm-w_YRY_-YyVj4AbGWgxI8I/edit#gid=837899005"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        784,
+        208
+      ],
+      "id": "48d29423-6aee-47be-b5a0-e65ace8ae0b3",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LVjvR6h7H7cn7RqL",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "37ad81b3-0aa8-4c78-9a40-0122acd363d2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4875c36f49e7c115ad2aad98aa70412fd00236db139035f8a7c7c48aa09ec332"
+  },
+  "id": "lg4o0TbiVLSjqmIj",
+  "tags": []
+}
