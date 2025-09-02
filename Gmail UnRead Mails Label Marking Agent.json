@@ -1,0 +1,403 @@
+{
+  "name": "Gmail UnRead Mails Label Marking Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "includeSpamTrash": true,
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "19d328f5-d74f-4e0a-b6d1-bc2dadd2dffd",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "IrAbPJ35vJrC3nzR",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        416,
+        208
+      ],
+      "id": "36d255d0-5700-47bd-9f60-9d90a109d656",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "HCkaAylBbpOKestz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        592,
+        208
+      ],
+      "id": "f2994f93-e4f7-474d-9d4a-7325c68e3fba",
+      "name": "get all existing labels",
+      "webhookId": "429a5783-0887-499a-aae1-825a42f860f4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "IrAbPJ35vJrC3nzR",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        496,
+        496
+      ],
+      "id": "352645aa-ae94-4540-86ca-ea3d75d72544",
+      "name": "Get many labels",
+      "webhookId": "e2f3b505-1703-4129-ae56-b743d8635700",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "IrAbPJ35vJrC3nzR",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "include": "specifiedFields",
+        "fieldsToInclude": "name,id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        832,
+        304
+      ],
+      "id": "5fcc665e-589c-4f84-a6e6-9a92cb4413cb",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "mode": "combineBySql",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1184,
+        224
+      ],
+      "id": "488efd1f-6ae9-4122-adc6-3eab283f4bde",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1ad6c9d8-aca6-4e51-a833-db985908523c",
+              "leftValue": "={{ $json.isExistingLabel }}",
+              "rightValue": "=true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        224
+      ],
+      "id": "d0fa7116-f9f6-4cde-936b-afcf60645636",
+      "name": "isExistingLabel"
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "operation": "create",
+        "name": "={{ $('isExistingLabel Code').item.json.newLabel }}",
+        "options": {
+          "labelListVisibility": "labelShow",
+          "messageListVisibility": "show"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2064,
+        352
+      ],
+      "id": "99b9a91d-fd3f-47aa-9ebc-97b3ba2c90b8",
+      "name": "Create a label",
+      "webhookId": "5b614053-2574-421f-b5e8-eab107f8743c",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "IrAbPJ35vJrC3nzR",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import ast\n\nexisting_label=\"\"\nnew_label=\"\"\nif len(_input.all()) == 1:\n    item = _input.all()[0]\n    outputItemsStr = item[\"json\"][\"output\"]\n    outputItems = ast.literal_eval(outputItemsStr)\n    if len(outputItems) == 2:\n      new_label = outputItems[0].upper()\n      existing_label = outputItems[1].upper()\n    \n\nreturn [\n        {\n            \"json\": {\n                \"existing_label\": existing_label,\n                \"new_label\": new_label\n            }\n        }\n    ]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        128
+      ],
+      "id": "e2dc1450-7fd6-44ea-8e3c-8abdea73999e",
+      "name": "transform labels output",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "isExistingLabel=False\nexistingLabelId=\"\"\nnewLabel=_input.all()[0]['json']['new_label']\nexistingLabel=_input.all()[0]['json']['existing_label']\nexistingLabelsItems=_input.all()[0]['json']['data']\nfor existingLabelItem in existingLabelsItems:\n  if existingLabelItem['name']==newLabel:\n    isExistingLabel=True\n  if existingLabelItem['name']==existingLabel:\n    existingLabelId=existingLabelItem['id']\n  \nreturn [\n  {\n    'json':{\n      \"isExistingLabel\": isExistingLabel,\n      \"newLabel\": newLabel,\n      \"existingLabelId\": existingLabelId\n    }\n  }\n]\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        224
+      ],
+      "id": "a49d96e8-671f-4286-a8d5-20c0cf6a8017",
+      "name": "isExistingLabel Code"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": "={{\n  $('Merge').item.json.existing_label === $('Merge').item.json.new_label\n    ? [ $('isExistingLabel Code').item.json.existingLabelId ]\n    : [ $('isExistingLabel Code').item.json.existingLabelId ,$('Create a label').item.json.id ]\n}}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2352,
+        176
+      ],
+      "id": "018fa052-af99-4de6-a776-db3e4b215562",
+      "name": "Add label to message",
+      "webhookId": "104cccae-4cf2-49e7-bb30-6515d598cadf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "IrAbPJ35vJrC3nzR",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.headers.subject + $json.text }}",
+        "options": {
+          "systemMessage": "You are a helpful mail label marking assistant. Help me with giving it a best label suited to classify under. Also  get all the labels from existing mailer and if similar one is present try to add that as well. So always give me 2 labels final in the output as a array. Always give first one you recommended and second one based on the existing labels. Return only the array as output always which has 2 labels. "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "4763a04b-2ebe-46ce-a8fa-3dd06aef40d9",
+      "name": "Get Labels Agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Labels Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get many labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Get Labels Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get all existing labels": {
+      "ai_tool": [
+        [
+          {
+            "node": "Get Labels Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many labels": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "isExistingLabel Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "isExistingLabel": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a label": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "transform labels output": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "isExistingLabel Code": {
+      "main": [
+        [
+          {
+            "node": "isExistingLabel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Labels Agent": {
+      "main": [
+        [
+          {
+            "node": "transform labels output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1c220da1-a12a-487c-95ae-a41b78d4b222",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4875c36f49e7c115ad2aad98aa70412fd00236db139035f8a7c7c48aa09ec332"
+  },
+  "id": "ffKEhkUO40ZfpwUf",
+  "tags": []
+}
